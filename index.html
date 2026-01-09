@@ -1028,11 +1028,13 @@
         let useFirebase = false;
 
         try {
-            if (firebaseConfig.apiKey !== "AIzaSyA3SrhLUgikQALORCV4-SKm7KTdxYImSEE") {
+            // Check if Firebase config has been updated from placeholder
+            if (firebaseConfig.apiKey && firebaseConfig.apiKey.startsWith("AIza") && firebaseConfig.projectId !== "YOUR_PROJECT_ID") {
                 firebase.initializeApp(firebaseConfig);
                 db = firebase.firestore();
                 useFirebase = true;
                 console.log("✅ Firebase initialized successfully");
+                console.log("📊 Project ID:", firebaseConfig.projectId);
             } else {
                 console.log("⚠️ Using localStorage - Update Firebase config to enable cloud sync");
             }
@@ -1047,28 +1049,77 @@
         const { useState, useEffect } = React;
 
         const GAME_TYPES = [
-            { id: 'base', name: 'Base Catan', winPoints: 10 },
-            { id: 'seafarers', name: 'Seafarers', winPoints: 10 },
-            { id: 'cities-knights', name: 'Cities & Knights', winPoints: 13 },
-            { id: 'traders-barbarians', name: 'Traders & Barbarians', winPoints: 10 },
-            { id: 'explorers-pirates', name: 'Explorers & Pirates', winPoints: 10 },
+            { id: 'base', name: 'Base Catan (3-4 Players)', winPoints: 10, description: 'Classic Catan - First to 10 VP wins' },
+            { id: 'base-5-6', name: 'Base Catan (5-6 Players)', winPoints: 10, description: 'Extended base game - First to 10 VP wins' },
+            { id: 'seafarers', name: 'Seafarers', winPoints: 10, description: 'Seafarers expansion - Varies by scenario (typically 10-14 VP)' },
+            { id: 'cities-knights', name: 'Cities & Knights', winPoints: 13, description: 'Cities & Knights expansion - First to 13 VP wins' },
+            { id: 'seafarers-ck', name: 'Seafarers + Cities & Knights', winPoints: 15, description: 'Combined expansions - Typically +2 VP from Seafarers scenario' },
+            { id: 'traders-barbarians', name: 'Traders & Barbarians', winPoints: 10, description: 'Traders & Barbarians scenarios - Varies by scenario' },
+            { id: 'explorers-pirates', name: 'Explorers & Pirates', winPoints: 10, description: 'Explorers & Pirates - Varies by scenario' },
         ];
 
         const POINT_SOURCES = {
             base: [
-                { id: 'settlements', name: 'Settlements', typical: 1 },
-                { id: 'cities', name: 'Cities', typical: 2 },
-                { id: 'longest-road', name: 'Longest Road', typical: 2 },
-                { id: 'largest-army', name: 'Largest Army', typical: 2 },
-                { id: 'vp-cards', name: 'Victory Point Cards', typical: 1 },
+                { id: 'settlements', name: 'Settlements (1 VP each)', typical: 1, max: 5 },
+                { id: 'cities', name: 'Cities (2 VP each)', typical: 2, max: 8 },
+                { id: 'longest-road', name: 'Longest Road (2 VP)', typical: 2, max: 2 },
+                { id: 'largest-army', name: 'Largest Army (2 VP)', typical: 2, max: 2 },
+                { id: 'vp-cards', name: 'Victory Point Cards (1 VP each)', typical: 1, max: 5 },
+            ],
+            'base-5-6': [
+                { id: 'settlements', name: 'Settlements (1 VP each)', typical: 1, max: 5 },
+                { id: 'cities', name: 'Cities (2 VP each)', typical: 2, max: 8 },
+                { id: 'longest-road', name: 'Longest Road (2 VP)', typical: 2, max: 2 },
+                { id: 'largest-army', name: 'Largest Army (2 VP)', typical: 2, max: 2 },
+                { id: 'vp-cards', name: 'Victory Point Cards (1 VP each)', typical: 1, max: 5 },
+            ],
+            seafarers: [
+                { id: 'settlements', name: 'Settlements (1 VP each)', typical: 1, max: 5 },
+                { id: 'cities', name: 'Cities (2 VP each)', typical: 2, max: 8 },
+                { id: 'island-settlements', name: 'New Island Settlements (+2 VP bonus)', typical: 2, max: 6 },
+                { id: 'longest-trade-route', name: 'Longest Trade Route (2 VP)', typical: 2, max: 2 },
+                { id: 'largest-army', name: 'Largest Army (2 VP)', typical: 2, max: 2 },
+                { id: 'vp-cards', name: 'Victory Point Cards (1 VP each)', typical: 1, max: 5 },
+                { id: 'scenario-bonus', name: 'Scenario-Specific Bonuses', typical: 1, max: 10 },
             ],
             'cities-knights': [
-                { id: 'settlements', name: 'Settlements', typical: 1 },
-                { id: 'cities', name: 'Cities', typical: 2 },
-                { id: 'longest-road', name: 'Longest Road', typical: 2 },
-                { id: 'defender-catan', name: 'Defender of Catan', typical: 1 },
-                { id: 'metropolis', name: 'Metropolis Cards', typical: 2 },
-                { id: 'vp-progress', name: 'VP Progress Cards', typical: 1 },
+                { id: 'settlements', name: 'Settlements (1 VP each)', typical: 1, max: 5 },
+                { id: 'cities', name: 'Cities (2 VP each)', typical: 2, max: 8 },
+                { id: 'metropolis-trade', name: 'Trade Metropolis (+2 VP)', typical: 2, max: 2 },
+                { id: 'metropolis-politics', name: 'Politics Metropolis (+2 VP)', typical: 2, max: 2 },
+                { id: 'metropolis-science', name: 'Science Metropolis (+2 VP)', typical: 2, max: 2 },
+                { id: 'longest-road', name: 'Longest Road (2 VP)', typical: 2, max: 2 },
+                { id: 'defender-catan', name: 'Defender of Catan (1 VP)', typical: 1, max: 1 },
+                { id: 'merchant', name: 'Merchant Token (1 VP)', typical: 1, max: 1 },
+                { id: 'vp-progress', name: 'VP Progress Cards (1 VP each)', typical: 1, max: 5 },
+            ],
+            'seafarers-ck': [
+                { id: 'settlements', name: 'Settlements (1 VP each)', typical: 1, max: 5 },
+                { id: 'cities', name: 'Cities (2 VP each)', typical: 2, max: 8 },
+                { id: 'island-settlements', name: 'New Island Settlements (+2 VP bonus)', typical: 2, max: 6 },
+                { id: 'metropolis-trade', name: 'Trade Metropolis (+2 VP)', typical: 2, max: 2 },
+                { id: 'metropolis-politics', name: 'Politics Metropolis (+2 VP)', typical: 2, max: 2 },
+                { id: 'metropolis-science', name: 'Science Metropolis (+2 VP)', typical: 2, max: 2 },
+                { id: 'longest-trade-route', name: 'Longest Trade Route (2 VP)', typical: 2, max: 2 },
+                { id: 'defender-catan', name: 'Defender of Catan (1 VP)', typical: 1, max: 1 },
+                { id: 'merchant', name: 'Merchant Token (1 VP)', typical: 1, max: 1 },
+                { id: 'vp-progress', name: 'VP Progress Cards (1 VP each)', typical: 1, max: 5 },
+            ],
+            'traders-barbarians': [
+                { id: 'settlements', name: 'Settlements (1 VP each)', typical: 1, max: 5 },
+                { id: 'cities', name: 'Cities (2 VP each)', typical: 2, max: 8 },
+                { id: 'longest-road', name: 'Longest Road (2 VP)', typical: 2, max: 2 },
+                { id: 'largest-army', name: 'Largest Army (2 VP)', typical: 2, max: 2 },
+                { id: 'vp-cards', name: 'Victory Point Cards (1 VP each)', typical: 1, max: 5 },
+                { id: 'scenario-bonus', name: 'Scenario-Specific Bonuses', typical: 1, max: 10 },
+            ],
+            'explorers-pirates': [
+                { id: 'settlements', name: 'Settlements (1 VP each)', typical: 1, max: 5 },
+                { id: 'cities', name: 'Cities (2 VP each)', typical: 2, max: 8 },
+                { id: 'mission-vp', name: 'Mission Victory Points', typical: 1, max: 10 },
+                { id: 'spice-sacks', name: 'Spice Sacks (1 VP each)', typical: 1, max: 5 },
+                { id: 'longest-trade-route', name: 'Longest Trade Route (2 VP)', typical: 2, max: 2 },
+                { id: 'scenario-bonus', name: 'Scenario-Specific Bonuses', typical: 1, max: 10 },
             ],
         };
 
