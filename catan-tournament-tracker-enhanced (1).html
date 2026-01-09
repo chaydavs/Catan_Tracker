@@ -1,0 +1,1939 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Catan Tournament Tracker</title>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+
+    <!-- React -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Pirata+One&family=Cinzel:wght@400;600;700&family=Merriweather:wght@300;400;700&display=swap"
+        rel="stylesheet">
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --wood-dark: #3e2723;
+            --wood-medium: #5d4037;
+            --wood-light: #8d6e63;
+            --parchment: #f5e6d3;
+            --wheat-gold: #f4b942;
+            --ore-gray: #757575;
+            --sheep-green: #81c784;
+            --brick-red: #d32f2f;
+            --wood-brown: #6d4c41;
+            --sea-blue: #4a90e2;
+            --shadow: rgba(0, 0, 0, 0.3);
+        }
+
+        @keyframes hexFloat {
+
+            0%,
+            100% {
+                transform: translateY(0px) rotate(0deg);
+            }
+
+            50% {
+                transform: translateY(-20px) rotate(5deg);
+            }
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes shimmer {
+            0% {
+                background-position: -1000px 0;
+            }
+
+            100% {
+                background-position: 1000px 0;
+            }
+        }
+
+        body {
+            font-family: 'Merriweather', serif;
+            background: linear-gradient(135deg, #1a237e 0%, #3949ab 50%, #5e35b1 100%);
+            min-height: 100vh;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* Animated Hexagonal Background Pattern */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image:
+                repeating-linear-gradient(0deg,
+                    rgba(255, 255, 255, 0.03) 0px,
+                    transparent 2px,
+                    transparent 40px,
+                    rgba(255, 255, 255, 0.03) 42px),
+                repeating-linear-gradient(60deg,
+                    rgba(255, 255, 255, 0.03) 0px,
+                    transparent 2px,
+                    transparent 40px,
+                    rgba(255, 255, 255, 0.03) 42px),
+                repeating-linear-gradient(120deg,
+                    rgba(255, 255, 255, 0.03) 0px,
+                    transparent 2px,
+                    transparent 40px,
+                    rgba(255, 255, 255, 0.03) 42px);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* Floating resource icons background */
+        .resource-floaters {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+            overflow: hidden;
+        }
+
+        .resource-icon {
+            position: absolute;
+            font-size: 3rem;
+            opacity: 0.08;
+            animation: hexFloat 15s ease-in-out infinite;
+        }
+
+        .resource-icon:nth-child(1) {
+            top: 10%;
+            left: 10%;
+            animation-delay: 0s;
+        }
+
+        .resource-icon:nth-child(2) {
+            top: 20%;
+            right: 15%;
+            animation-delay: 2s;
+        }
+
+        .resource-icon:nth-child(3) {
+            top: 50%;
+            left: 5%;
+            animation-delay: 4s;
+        }
+
+        .resource-icon:nth-child(4) {
+            bottom: 20%;
+            right: 10%;
+            animation-delay: 6s;
+        }
+
+        .resource-icon:nth-child(5) {
+            bottom: 10%;
+            left: 20%;
+            animation-delay: 8s;
+        }
+
+        .resource-icon:nth-child(6) {
+            top: 70%;
+            right: 25%;
+            animation-delay: 10s;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Hexagonal Card Design */
+        .card {
+            background: linear-gradient(135deg, rgba(245, 230, 211, 0.98) 0%, rgba(255, 248, 220, 0.95) 100%);
+            border-radius: 16px;
+            box-shadow:
+                0 8px 32px rgba(0, 0, 0, 0.2),
+                inset 0 1px 0 rgba(255, 255, 255, 0.5);
+            padding: 2rem;
+            margin-bottom: 2rem;
+            border: 3px solid var(--wood-medium);
+            position: relative;
+            overflow: hidden;
+            animation: fadeInUp 0.6s ease-out;
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background:
+                linear-gradient(45deg, transparent 48%, rgba(139, 110, 99, 0.1) 50%, transparent 52%),
+                linear-gradient(-45deg, transparent 48%, rgba(139, 110, 99, 0.1) 50%, transparent 52%);
+            background-size: 20px 20px;
+            opacity: 0.3;
+            pointer-events: none;
+        }
+
+        .card-wood {
+            background: linear-gradient(135deg, var(--wood-dark) 0%, var(--wood-medium) 100%);
+            color: var(--parchment);
+            border: 3px solid var(--wood-light);
+        }
+
+        .card-wood::before {
+            background: repeating-linear-gradient(90deg,
+                    transparent,
+                    transparent 2px,
+                    rgba(0, 0, 0, 0.1) 2px,
+                    rgba(0, 0, 0, 0.1) 4px);
+        }
+
+        /* Typography with Pirate Aesthetic */
+        h1 {
+            font-family: 'Pirata One', cursive;
+            font-size: 3.5rem;
+            color: var(--wood-dark);
+            text-shadow:
+                3px 3px 0 var(--wheat-gold),
+                -1px -1px 0 var(--wood-medium),
+                2px 2px 10px rgba(0, 0, 0, 0.3);
+            margin-bottom: 0.5rem;
+            letter-spacing: 2px;
+            animation: fadeInUp 0.8s ease-out;
+        }
+
+        h2 {
+            font-family: 'Cinzel', serif;
+            font-size: 2.2rem;
+            color: var(--wood-dark);
+            margin-bottom: 1.5rem;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            font-weight: 700;
+            position: relative;
+            display: inline-block;
+        }
+
+        h2::after {
+            content: '';
+            position: absolute;
+            bottom: -8px;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: linear-gradient(90deg, var(--wheat-gold), transparent);
+        }
+
+        h3 {
+            font-family: 'Cinzel', serif;
+            font-size: 1.6rem;
+            color: var(--wood-dark);
+            margin-bottom: 1rem;
+            font-weight: 600;
+        }
+
+        h4 {
+            font-family: 'Cinzel', serif;
+            font-size: 1.3rem;
+            color: var(--wood-medium);
+            margin-bottom: 0.75rem;
+            font-weight: 600;
+        }
+
+        .subtitle {
+            font-family: 'Merriweather', serif;
+            color: var(--wood-medium);
+            font-size: 1.1rem;
+            font-style: italic;
+            font-weight: 300;
+        }
+
+        /* Hexagonal Navigation */
+        .nav {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .nav-btn {
+            padding: 1rem 2rem;
+            border: none;
+            border-radius: 0;
+            font-family: 'Cinzel', serif;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            position: relative;
+            clip-path: polygon(10% 0%, 90% 0%, 100% 50%, 90% 100%, 10% 100%, 0% 50%);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        .nav-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(45deg, transparent 40%, rgba(255, 255, 255, 0.3) 50%, transparent 60%);
+            background-size: 200% 200%;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .nav-btn:hover::before {
+            opacity: 1;
+            animation: shimmer 1.5s infinite;
+        }
+
+        .nav-btn.active {
+            background: linear-gradient(135deg, var(--wheat-gold) 0%, #f6a623 100%);
+            color: var(--wood-dark);
+            transform: scale(1.05);
+        }
+
+        .nav-btn:not(.active) {
+            background: linear-gradient(135deg, var(--wood-medium) 0%, var(--wood-dark) 100%);
+            color: var(--parchment);
+        }
+
+        .nav-btn:not(.active):hover {
+            transform: scale(1.05) translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Styled Buttons */
+        .btn {
+            padding: 1rem 2rem;
+            border: 2px solid transparent;
+            border-radius: 8px;
+            font-family: 'Cinzel', serif;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            transform: translate(-50%, -50%);
+            transition: width 0.5s, height 0.5s;
+        }
+
+        .btn:hover::after {
+            width: 300px;
+            height: 300px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #5e35b1 0%, #7e57c2 100%);
+            color: white;
+            border-color: #311b92;
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #4a148c 0%, #5e35b1 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(94, 53, 177, 0.4);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, var(--sheep-green) 0%, #66bb6a 100%);
+            color: white;
+            border-color: #2e7d32;
+        }
+
+        .btn-success:hover {
+            background: linear-gradient(135deg, #2e7d32 0%, var(--sheep-green) 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(129, 199, 132, 0.4);
+        }
+
+        .btn-secondary {
+            background: var(--parchment);
+            color: var(--wood-dark);
+            border-color: var(--wood-medium);
+        }
+
+        .btn-secondary:hover {
+            background: #e8d5c4;
+            transform: translateY(-2px);
+        }
+
+        .btn-blue {
+            background: linear-gradient(135deg, var(--sea-blue) 0%, #5c9edb 100%);
+            color: white;
+            border-color: #1976d2;
+        }
+
+        .btn-blue:hover {
+            background: linear-gradient(135deg, #1976d2 0%, var(--sea-blue) 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(74, 144, 226, 0.4);
+        }
+
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            opacity: 0.6;
+            transform: none !important;
+        }
+
+        /* Grid System */
+        .grid {
+            display: grid;
+            gap: 1.5rem;
+        }
+
+        .grid-cols-1 {
+            grid-template-columns: repeat(1, 1fr);
+        }
+
+        .grid-cols-2 {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        .grid-cols-3 {
+            grid-template-columns: repeat(3, 1fr);
+        }
+
+        @media (min-width: 768px) {
+            .md-grid-cols-2 {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .md-grid-cols-3 {
+                grid-template-columns: repeat(3, 1fr);
+            }
+
+            .md-grid-cols-4 {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+
+        @media (min-width: 1024px) {
+            .lg-grid-cols-3 {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+
+        /* Resource-Themed Stat Cards */
+        .stat-card {
+            padding: 2rem;
+            border-radius: 12px;
+            color: white;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.3s ease;
+            animation: fadeInUp 0.6s ease-out;
+            border: 3px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .stat-card:hover {
+            transform: translateY(-8px) scale(1.02);
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
+            animation: hexFloat 20s ease-in-out infinite;
+        }
+
+        .stat-card.wheat {
+            background: linear-gradient(135deg, #f4b942 0%, #e89c2e 100%);
+        }
+
+        .stat-card.ore {
+            background: linear-gradient(135deg, #616161 0%, #424242 100%);
+        }
+
+        .stat-card.sheep {
+            background: linear-gradient(135deg, var(--sheep-green) 0%, #4caf50 100%);
+        }
+
+        .stat-card.brick {
+            background: linear-gradient(135deg, var(--brick-red) 0%, #c62828 100%);
+        }
+
+        .stat-value {
+            font-family: 'Pirata One', cursive;
+            font-size: 3.5rem;
+            font-weight: bold;
+            position: relative;
+            z-index: 1;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .stat-label {
+            font-family: 'Cinzel', serif;
+            font-size: 1rem;
+            opacity: 0.95;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Form Styling */
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-label {
+            display: block;
+            font-family: 'Cinzel', serif;
+            font-weight: 600;
+            color: var(--wood-dark);
+            margin-bottom: 0.5rem;
+            font-size: 0.95rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .form-input,
+        .form-select {
+            width: 100%;
+            padding: 1rem;
+            border: 2px solid var(--wood-medium);
+            border-radius: 8px;
+            font-family: 'Merriweather', serif;
+            font-size: 1rem;
+            background: white;
+            transition: all 0.3s;
+        }
+
+        .form-input:focus,
+        .form-select:focus {
+            outline: none;
+            border-color: var(--wheat-gold);
+            box-shadow: 0 0 0 3px rgba(244, 185, 66, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .form-bg {
+            background: linear-gradient(135deg, rgba(139, 110, 99, 0.1) 0%, rgba(109, 76, 65, 0.05) 100%);
+            padding: 2rem;
+            border-radius: 12px;
+            margin-bottom: 2rem;
+            border: 2px solid var(--wood-light);
+        }
+
+        /* Tournament and Player Cards */
+        .item-card {
+            border: 3px solid var(--wood-medium);
+            border-radius: 12px;
+            padding: 1.5rem;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(245, 230, 211, 0.9) 100%);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .item-card::before {
+            content: '⬡';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            font-size: 10rem;
+            color: rgba(139, 110, 99, 0.05);
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+        }
+
+        .item-card:hover {
+            border-color: var(--wheat-gold);
+            transform: translateY(-8px) scale(1.02);
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.2);
+        }
+
+        .player-card {
+            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+            border: 3px solid var(--sea-blue);
+            border-radius: 12px;
+            padding: 2rem;
+            position: relative;
+            overflow: hidden;
+            animation: fadeInUp 0.6s ease-out;
+        }
+
+        .player-card::before {
+            content: '🏘️';
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            font-size: 3rem;
+            opacity: 0.2;
+        }
+
+        /* Game Cards */
+        .game-card {
+            background: white;
+            border: 2px solid var(--wood-light);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .game-card:hover {
+            transform: translateX(8px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+        }
+
+        .game-score-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem;
+            border-radius: 8px;
+            margin-bottom: 0.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .game-score-row:hover {
+            transform: translateX(4px);
+        }
+
+        .game-score-row.winner {
+            background: linear-gradient(90deg, #fff9e6 0%, #fff3cd 100%);
+            border: 2px solid var(--wheat-gold);
+            box-shadow: 0 4px 12px rgba(244, 185, 66, 0.3);
+        }
+
+        .game-score-row.regular {
+            background: #f8f9fa;
+        }
+
+        /* Leaderboard */
+        .leaderboard {
+            background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+            border: 3px solid var(--wheat-gold);
+            border-radius: 12px;
+            padding: 2rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .leaderboard::before {
+            content: '👑';
+            position: absolute;
+            top: 10px;
+            right: 20px;
+            font-size: 3rem;
+            opacity: 0.2;
+            animation: hexFloat 5s ease-in-out infinite;
+        }
+
+        .leaderboard-item {
+            background: white;
+            border-radius: 10px;
+            padding: 1.25rem;
+            margin-bottom: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .leaderboard-item:hover {
+            transform: translateX(8px);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+        }
+
+        .rank {
+            font-family: 'Pirata One', cursive;
+            font-size: 2rem;
+            font-weight: bold;
+            margin-right: 1rem;
+        }
+
+        .rank.first {
+            color: var(--wheat-gold);
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .rank.other {
+            color: var(--ore-gray);
+        }
+
+        /* Score Entry */
+        .score-entry-card {
+            background: white;
+            border: 2px solid var(--wood-light);
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Player Selection Buttons */
+        .player-select-btn {
+            padding: 1rem;
+            border-radius: 10px;
+            font-family: 'Cinzel', serif;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid var(--wood-light);
+            background: white;
+            color: var(--wood-dark);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .player-select-btn:hover {
+            background: var(--parchment);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .player-select-btn.selected {
+            background: linear-gradient(135deg, var(--wheat-gold) 0%, #f6a623 100%);
+            color: var(--wood-dark);
+            border-color: #e89c2e;
+            transform: scale(1.05);
+        }
+
+        /* Score Input Grid */
+        .score-input-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+        }
+
+        @media (min-width: 768px) {
+            .score-input-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+
+        .score-input-group {
+            margin-bottom: 0;
+        }
+
+        .score-input-group label {
+            display: block;
+            font-family: 'Cinzel', serif;
+            font-size: 0.75rem;
+            color: var(--wood-medium);
+            margin-bottom: 0.4rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .score-input-group input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid var(--wood-light);
+            border-radius: 6px;
+            font-size: 1.1rem;
+            font-family: 'Merriweather', serif;
+            font-weight: 700;
+            text-align: center;
+            color: var(--wood-dark);
+        }
+
+        .score-input-group input:focus {
+            outline: none;
+            border-color: var(--wheat-gold);
+            box-shadow: 0 0 0 3px rgba(244, 185, 66, 0.2);
+        }
+
+        /* Utilities */
+        .flex {
+            display: flex;
+        }
+
+        .flex-between {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .gap-2 {
+            gap: 0.5rem;
+        }
+
+        .gap-3 {
+            gap: 0.75rem;
+        }
+
+        .mb-2 {
+            margin-bottom: 0.5rem;
+        }
+
+        .mb-3 {
+            margin-bottom: 0.75rem;
+        }
+
+        .mb-4 {
+            margin-bottom: 1rem;
+        }
+
+        .mb-6 {
+            margin-bottom: 1.5rem;
+        }
+
+        .mt-3 {
+            margin-top: 0.75rem;
+        }
+
+        .mt-6 {
+            margin-top: 1.5rem;
+        }
+
+        .text-center {
+            text-align: center;
+        }
+
+        .text-right {
+            text-align: right;
+        }
+
+        .text-sm {
+            font-size: 0.95rem;
+        }
+
+        .text-lg {
+            font-size: 1.15rem;
+        }
+
+        .font-bold {
+            font-weight: 700;
+        }
+
+        .font-semibold {
+            font-weight: 600;
+        }
+
+        .font-medium {
+            font-weight: 500;
+        }
+
+        .text-wood-dark {
+            color: var(--wood-dark);
+        }
+
+        .text-wood-medium {
+            color: var(--wood-medium);
+        }
+
+        .text-wheat {
+            color: var(--wheat-gold);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: var(--wood-medium);
+            font-style: italic;
+            font-size: 1.2rem;
+        }
+
+        .back-link {
+            color: var(--sea-blue);
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+            font-family: 'Cinzel', serif;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.3s ease;
+        }
+
+        .back-link:hover {
+            color: #1976d2;
+            transform: translateX(-4px);
+        }
+
+        /* Progress Bars */
+        .progress-bar-container {
+            width: 100%;
+            background: rgba(139, 110, 99, 0.2);
+            border-radius: 9999px;
+            height: 12px;
+            overflow: hidden;
+            border: 2px solid var(--wood-light);
+        }
+
+        .progress-bar {
+            background: linear-gradient(90deg, var(--wheat-gold) 0%, #f6a623 100%);
+            height: 100%;
+            transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 2px 8px rgba(244, 185, 66, 0.4);
+        }
+
+        /* Ranking Card */
+        .ranking-card {
+            border: 2px solid var(--wood-light);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            background: white;
+            transition: all 0.3s ease;
+        }
+
+        .ranking-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+            font-family: 'Merriweather', serif;
+        }
+
+        .info-label {
+            color: var(--wood-medium);
+        }
+
+        .info-value {
+            font-weight: 700;
+            color: var(--wood-dark);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2.5rem;
+            }
+
+            h2 {
+                font-size: 1.8rem;
+            }
+
+            .container {
+                padding: 1rem;
+            }
+
+            .nav-btn {
+                padding: 0.75rem 1.5rem;
+            }
+
+            .stat-value {
+                font-size: 2.5rem;
+            }
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 12px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--wood-dark);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--wheat-gold);
+            border-radius: 6px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #f6a623;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="resource-floaters">
+        <div class="resource-icon">🌾</div>
+        <div class="resource-icon">⛰️</div>
+        <div class="resource-icon">🐑</div>
+        <div class="resource-icon">🧱</div>
+        <div class="resource-icon">🌲</div>
+        <div class="resource-icon">⬡</div>
+    </div>
+
+    <div id="root"></div>
+
+    <script type="text/babel">
+        // ========================================
+        // FIREBASE CONFIGURATION
+        // ========================================
+        // TODO: Replace with your Firebase config
+        // Get this from Firebase Console > Project Settings > Your apps > Firebase SDK snippet
+        const firebaseConfig = {
+            apiKey: "AIzaSyA3SrhLUgikQALORCV4-SKm7KTdxYImSEE",
+            authDomain: "catan-d7e10.firebaseapp.com",
+            projectId: "catan-d7e10",
+            storageBucket: "catan-d7e10.firebasestorage.app",
+            messagingSenderId: "249740495780",
+            appId: "1:249740495780:web:3022cb06d0a9e3c4e50f31",
+            measurementId: "G-DY62P2TGGY"
+        };
+
+        // Initialize Firebase
+        let db = null;
+        let useFirebase = false;
+
+        try {
+            if (firebaseConfig.apiKey !== "AIzaSyA3SrhLUgikQALORCV4-SKm7KTdxYImSEE") {
+                firebase.initializeApp(firebaseConfig);
+                db = firebase.firestore();
+                useFirebase = true;
+                console.log("✅ Firebase initialized successfully");
+            } else {
+                console.log("⚠️ Using localStorage - Update Firebase config to enable cloud sync");
+            }
+        } catch (error) {
+            console.error("❌ Firebase initialization failed:", error);
+            console.log("⚠️ Falling back to localStorage");
+        }
+
+        // ========================================
+        // REACT COMPONENT
+        // ========================================
+        const { useState, useEffect } = React;
+
+        const GAME_TYPES = [
+            { id: 'base', name: 'Base Catan', winPoints: 10 },
+            { id: 'seafarers', name: 'Seafarers', winPoints: 10 },
+            { id: 'cities-knights', name: 'Cities & Knights', winPoints: 13 },
+            { id: 'traders-barbarians', name: 'Traders & Barbarians', winPoints: 10 },
+            { id: 'explorers-pirates', name: 'Explorers & Pirates', winPoints: 10 },
+        ];
+
+        const POINT_SOURCES = {
+            base: [
+                { id: 'settlements', name: 'Settlements', typical: 1 },
+                { id: 'cities', name: 'Cities', typical: 2 },
+                { id: 'longest-road', name: 'Longest Road', typical: 2 },
+                { id: 'largest-army', name: 'Largest Army', typical: 2 },
+                { id: 'vp-cards', name: 'Victory Point Cards', typical: 1 },
+            ],
+            'cities-knights': [
+                { id: 'settlements', name: 'Settlements', typical: 1 },
+                { id: 'cities', name: 'Cities', typical: 2 },
+                { id: 'longest-road', name: 'Longest Road', typical: 2 },
+                { id: 'defender-catan', name: 'Defender of Catan', typical: 1 },
+                { id: 'metropolis', name: 'Metropolis Cards', typical: 2 },
+                { id: 'vp-progress', name: 'VP Progress Cards', typical: 1 },
+            ],
+        };
+
+        function CatanTournamentTracker() {
+            const [view, setView] = useState('home');
+            const [tournaments, setTournaments] = useState([]);
+            const [players, setPlayers] = useState([]);
+            const [currentTournament, setCurrentTournament] = useState(null);
+            const [showNewTournament, setShowNewTournament] = useState(false);
+            const [showNewGame, setShowNewGame] = useState(false);
+            const [showNewPlayer, setShowNewPlayer] = useState(false);
+
+            // Load initial data from Firebase or localStorage
+            useEffect(() => {
+                if (useFirebase) {
+                    // Load from Firebase
+                    const unsubscribeTournaments = db.collection('tournaments').onSnapshot((snapshot) => {
+                        const tournamentsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                        setTournaments(tournamentsData);
+                    }, (error) => {
+                        console.error("Error loading tournaments:", error);
+                    });
+
+                    const unsubscribePlayers = db.collection('players').onSnapshot((snapshot) => {
+                        const playersData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                        setPlayers(playersData);
+                    }, (error) => {
+                        console.error("Error loading players:", error);
+                    });
+
+                    // Cleanup subscriptions
+                    return () => {
+                        unsubscribeTournaments();
+                        unsubscribePlayers();
+                    };
+                } else {
+                    // Load from localStorage
+                    const savedTournaments = localStorage.getItem('catanTournaments');
+                    const savedPlayers = localStorage.getItem('catanPlayers');
+                    if (savedTournaments) setTournaments(JSON.parse(savedTournaments));
+                    if (savedPlayers) setPlayers(JSON.parse(savedPlayers));
+                }
+            }, []);
+
+            // Save to localStorage when not using Firebase
+            useEffect(() => {
+                if (!useFirebase) {
+                    localStorage.setItem('catanTournaments', JSON.stringify(tournaments));
+                }
+            }, [tournaments]);
+
+            useEffect(() => {
+                if (!useFirebase) {
+                    localStorage.setItem('catanPlayers', JSON.stringify(players));
+                }
+            }, [players]);
+
+            const addPlayer = (name) => {
+                const newPlayer = {
+                    id: Date.now().toString(),
+                    name,
+                    gamesPlayed: 0,
+                    wins: 0,
+                    totalPoints: 0,
+                };
+
+                if (useFirebase) {
+                    db.collection('players').doc(newPlayer.id).set(newPlayer)
+                        .catch(error => console.error("Error adding player:", error));
+                } else {
+                    setPlayers([...players, newPlayer]);
+                }
+            };
+
+            const deletePlayer = (playerId) => {
+                if (window.confirm('Are you sure you want to delete this settler? This action cannot be undone.')) {
+                    if (useFirebase) {
+                        db.collection('players').doc(playerId).delete()
+                            .catch(error => console.error("Error deleting player:", error));
+                    } else {
+                        setPlayers(players.filter(p => p.id !== playerId));
+                    }
+                }
+            };
+
+            const addTournament = (tournament) => {
+                const newTournament = {
+                    ...tournament,
+                    id: Date.now().toString(),
+                    games: [],
+                    createdAt: new Date().toISOString(),
+                };
+
+                if (useFirebase) {
+                    db.collection('tournaments').doc(newTournament.id).set(newTournament)
+                        .catch(error => console.error("Error adding tournament:", error));
+                } else {
+                    setTournaments([...tournaments, newTournament]);
+                }
+                setShowNewTournament(false);
+            };
+
+            const deleteTournament = (tournamentId) => {
+                if (window.confirm('Are you sure you want to delete this tournament? All games and records will be lost. This action cannot be undone.')) {
+                    if (useFirebase) {
+                        db.collection('tournaments').doc(tournamentId).delete()
+                            .catch(error => console.error("Error deleting tournament:", error));
+                    } else {
+                        setTournaments(tournaments.filter(t => t.id !== tournamentId));
+                    }
+                }
+            };
+
+            const addGame = (tournamentId, game) => {
+                const newGame = { ...game, id: Date.now().toString(), date: new Date().toISOString() };
+
+                if (useFirebase) {
+                    // Update tournament with new game
+                    const tournament = tournaments.find(t => t.id === tournamentId);
+                    if (tournament) {
+                        const updatedTournament = {
+                            ...tournament,
+                            games: [...tournament.games, newGame]
+                        };
+                        db.collection('tournaments').doc(tournamentId).set(updatedTournament)
+                            .catch(error => console.error("Error adding game:", error));
+                    }
+
+                    // Update player stats
+                    game.scores.forEach(score => {
+                        const player = players.find(p => p.id === score.playerId);
+                        if (player) {
+                            const updatedPlayer = {
+                                ...player,
+                                gamesPlayed: player.gamesPlayed + 1,
+                                wins: player.wins + (score.placement === 1 ? 1 : 0),
+                                totalPoints: player.totalPoints + score.totalPoints,
+                            };
+                            db.collection('players').doc(score.playerId).set(updatedPlayer)
+                                .catch(error => console.error("Error updating player:", error));
+                        }
+                    });
+                } else {
+                    // localStorage mode
+                    setTournaments(tournaments.map(t => {
+                        if (t.id === tournamentId) {
+                            return {
+                                ...t,
+                                games: [...t.games, newGame]
+                            };
+                        }
+                        return t;
+                    }));
+
+                    game.scores.forEach(score => {
+                        setPlayers(players.map(p => {
+                            if (p.id === score.playerId) {
+                                return {
+                                    ...p,
+                                    gamesPlayed: p.gamesPlayed + 1,
+                                    wins: p.wins + (score.placement === 1 ? 1 : 0),
+                                    totalPoints: p.totalPoints + score.totalPoints,
+                                };
+                            }
+                            return p;
+                        }));
+                    });
+                }
+
+                setShowNewGame(false);
+            };
+
+            return (
+                <div className="container">
+                    <div className="card">
+                        <h1>⬢ Catan Tournament Tracker ⬢</h1>
+                        <p className="subtitle">Chronicle your conquests across the isles of Catan</p>
+                    </div>
+
+                    <div className="card">
+                        <div className="nav">
+                            <button onClick={() => setView('home')} className={`nav-btn ${view === 'home' ? 'active' : ''}`}>
+                                Home
+                            </button>
+                            <button onClick={() => setView('tournaments')} className={`nav-btn ${view === 'tournaments' ? 'active' : ''}`}>
+                                Tournaments
+                            </button>
+                            <button onClick={() => setView('players')} className={`nav-btn ${view === 'players' ? 'active' : ''}`}>
+                                Settlers
+                            </button>
+                            <button onClick={() => setView('stats')} className={`nav-btn ${view === 'stats' ? 'active' : ''}`}>
+                                Chronicles
+                            </button>
+                        </div>
+                    </div>
+
+                    {view === 'home' && <HomeView tournaments={tournaments} players={players} setView={setView} />}
+                    {view === 'tournaments' && (
+                        <TournamentsView
+                            tournaments={tournaments}
+                            players={players}
+                            showNewTournament={showNewTournament}
+                            setShowNewTournament={setShowNewTournament}
+                            showNewGame={showNewGame}
+                            setShowNewGame={setShowNewGame}
+                            currentTournament={currentTournament}
+                            setCurrentTournament={setCurrentTournament}
+                            addTournament={addTournament}
+                            addGame={addGame}
+                            deleteTournament={deleteTournament}
+                        />
+                    )}
+                    {view === 'players' && (
+                        <PlayersView
+                            players={players}
+                            showNewPlayer={showNewPlayer}
+                            setShowNewPlayer={setShowNewPlayer}
+                            addPlayer={addPlayer}
+                            deletePlayer={deletePlayer}
+                        />
+                    )}
+                    {view === 'stats' && <StatsView tournaments={tournaments} players={players} />}
+                </div>
+            );
+        }
+
+        function HomeView({ tournaments, players, setView }) {
+            const totalGames = tournaments.reduce((sum, t) => sum + t.games.length, 0);
+            const recentGames = tournaments
+                .flatMap(t => t.games.map(g => ({ ...g, tournamentName: t.name })))
+                .sort((a, b) => new Date(b.date) - new Date(a.date))
+                .slice(0, 5);
+
+            return (
+                <div>
+                    <div className="grid grid-cols-1 md-grid-cols-3 mb-6" style={{ animationDelay: '0.1s' }}>
+                        <div className="stat-card wheat">
+                            <div className="stat-value">{tournaments.length}</div>
+                            <div className="stat-label">Tournaments</div>
+                        </div>
+                        <div className="stat-card sheep">
+                            <div className="stat-value">{totalGames}</div>
+                            <div className="stat-label">Games Played</div>
+                        </div>
+                        <div className="stat-card brick">
+                            <div className="stat-value">{players.length}</div>
+                            <div className="stat-label">Settlers</div>
+                        </div>
+                    </div>
+
+                    <div className="card" style={{ animationDelay: '0.3s' }}>
+                        <h2>⚔️ Recent Conquests</h2>
+                        {recentGames.length === 0 ? (
+                            <p className="empty-state">The chronicle awaits your first conquest...</p>
+                        ) : (
+                            <div>
+                                {recentGames.map((game, idx) => (
+                                    <div key={idx} className="game-card">
+                                        <div className="flex-between mb-2">
+                                            <div>
+                                                <div className="font-semibold text-wood-dark">{game.tournamentName}</div>
+                                                <div className="text-sm text-wood-medium">
+                                                    {GAME_TYPES.find(gt => gt.id === game.gameType)?.name || game.gameType}
+                                                </div>
+                                            </div>
+                                            <div className="text-sm text-wood-medium">
+                                                {new Date(game.date).toLocaleDateString()}
+                                            </div>
+                                        </div>
+                                        <div className="text-sm">
+                                            <span className="font-medium">Victor:</span>{' '}
+                                            <span className="font-bold text-wheat">
+                                                {players.find(p => p.id === game.scores[0]?.playerId)?.name || 'Unknown'} 👑
+                                            </span>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="card card-wood" style={{ animationDelay: '0.4s' }}>
+                        <h2 style={{ color: 'var(--parchment)' }}>⚡ Quick Actions</h2>
+                        <div className="grid grid-cols-1 md-grid-cols-2">
+                            <button onClick={() => setView('tournaments')} className="btn btn-primary">
+                                ⬢ New Tournament
+                            </button>
+                            <button onClick={() => setView('players')} className="btn btn-blue">
+                                🏘️ Add Settler
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        function TournamentsView({ tournaments, players, showNewTournament, setShowNewTournament, showNewGame, setShowNewGame, currentTournament, setCurrentTournament, addTournament, addGame, deleteTournament }) {
+            if (currentTournament) {
+                const tournament = tournaments.find(t => t.id === currentTournament);
+                return (
+                    <TournamentDetail
+                        tournament={tournament}
+                        players={players}
+                        onBack={() => setCurrentTournament(null)}
+                        showNewGame={showNewGame}
+                        setShowNewGame={setShowNewGame}
+                        addGame={addGame}
+                    />
+                );
+            }
+
+            const handleDeleteTournament = (e, tournamentId) => {
+                e.stopPropagation(); // Prevent card click event
+                deleteTournament(tournamentId);
+            };
+
+            return (
+                <div>
+                    <div className="card">
+                        <div className="flex-between mb-4">
+                            <h2>🏆 Tournaments</h2>
+                            <button onClick={() => setShowNewTournament(true)} className="btn btn-primary">
+                                ⬢ New Tournament
+                            </button>
+                        </div>
+
+                        {showNewTournament && (
+                            <NewTournamentForm
+                                onSubmit={addTournament}
+                                onCancel={() => setShowNewTournament(false)}
+                            />
+                        )}
+
+                        {tournaments.length === 0 ? (
+                            <p className="empty-state">No tournaments yet. Create one to begin your saga!</p>
+                        ) : (
+                            <div className="grid grid-cols-1 md-grid-cols-2 mt-6">
+                                {tournaments.map(tournament => (
+                                    <div key={tournament.id} onClick={() => setCurrentTournament(tournament.id)} className="item-card" style={{ position: 'relative' }}>
+                                        <button
+                                            onClick={(e) => handleDeleteTournament(e, tournament.id)}
+                                            className="btn btn-secondary"
+                                            style={{
+                                                position: 'absolute',
+                                                top: '1rem',
+                                                right: '1rem',
+                                                padding: '0.5rem 1rem',
+                                                fontSize: '0.85rem',
+                                                background: 'linear-gradient(135deg, #d32f2f 0%, #c62828 100%)',
+                                                color: 'white',
+                                                border: '2px solid #b71c1c',
+                                                zIndex: 10
+                                            }}
+                                        >
+                                            🗑️ Delete
+                                        </button>
+                                        <h3>{tournament.name}</h3>
+                                        <div className="text-sm text-wood-medium">
+                                            <div className="info-row">
+                                                <span>Format:</span>
+                                                <span className="font-semibold">{tournament.format}</span>
+                                            </div>
+                                            <div className="info-row">
+                                                <span>Games:</span>
+                                                <span className="font-semibold">{tournament.games.length}</span>
+                                            </div>
+                                            <div className="info-row">
+                                                <span>Founded:</span>
+                                                <span className="font-semibold">{new Date(tournament.createdAt).toLocaleDateString()}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                </div>
+            );
+        }
+
+        function NewTournamentForm({ onSubmit, onCancel }) {
+            const [name, setName] = useState('');
+            const [format, setFormat] = useState('round-robin');
+
+            const handleSubmit = (e) => {
+                e.preventDefault();
+                if (name.trim()) {
+                    onSubmit({ name, format });
+                    setName('');
+                    setFormat('round-robin');
+                }
+            };
+
+            return (
+                <form onSubmit={handleSubmit} className="form-bg">
+                    <div className="form-group">
+                        <label className="form-label">Tournament Name</label>
+                        <input
+                            type="text"
+                            value={name}
+                            onChange={(e) => setName(e.target.value)}
+                            className="form-input"
+                            placeholder="e.g., Winter Championship 2024"
+                            required
+                        />
+                    </div>
+                    <div className="form-group">
+                        <label className="form-label">Format</label>
+                        <select value={format} onChange={(e) => setFormat(e.target.value)} className="form-select">
+                            <option value="round-robin">Round Robin</option>
+                            <option value="single-elimination">Single Elimination</option>
+                            <option value="swiss">Swiss System</option>
+                            <option value="casual">Casual (Point Accumulation)</option>
+                        </select>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                        <button type="submit" className="btn btn-primary">Create Tournament</button>
+                        <button type="button" onClick={onCancel} className="btn btn-secondary">Cancel</button>
+                    </div>
+                </form>
+            );
+        }
+
+        function TournamentDetail({ tournament, players, onBack, showNewGame, setShowNewGame, addGame }) {
+            return (
+                <div>
+                    <div className="card">
+                        <div className="back-link" onClick={onBack}>← Back to Tournaments</div>
+
+                        <div className="flex-between mb-6">
+                            <div>
+                                <h2>{tournament.name}</h2>
+                                <p className="subtitle">Format: {tournament.format}</p>
+                            </div>
+                            <button onClick={() => setShowNewGame(true)} className="btn btn-success">
+                                📜 Log Game
+                            </button>
+                        </div>
+
+                        {showNewGame && (
+                            <NewGameForm
+                                tournamentId={tournament.id}
+                                players={players}
+                                onSubmit={addGame}
+                                onCancel={() => setShowNewGame(false)}
+                            />
+                        )}
+
+                        <TournamentLeaderboard tournament={tournament} players={players} />
+
+                        <div className="mt-6">
+                            <h3>📖 Chronicle of Battles ({tournament.games.length})</h3>
+                            {tournament.games.length === 0 ? (
+                                <p className="empty-state">No games recorded yet</p>
+                            ) : (
+                                <div>
+                                    {tournament.games.map((game, idx) => (
+                                        <GameCard key={game.id} game={game} players={players} gameNumber={idx + 1} />
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        function TournamentLeaderboard({ tournament, players }) {
+            const standings = players
+                .map(player => {
+                    const playerGames = tournament.games.flatMap(g => g.scores.filter(s => s.playerId === player.id));
+                    const wins = playerGames.filter(s => s.placement === 1).length;
+                    const totalPoints = playerGames.reduce((sum, s) => sum + s.totalPoints, 0);
+                    const gamesPlayed = playerGames.length;
+                    return { player, wins, totalPoints, gamesPlayed };
+                })
+                .filter(s => s.gamesPlayed > 0)
+                .sort((a, b) => b.totalPoints - a.totalPoints);
+
+            if (standings.length === 0) return null;
+
+            return (
+                <div className="leaderboard mb-6">
+                    <h3 className="mb-3">👑 Tournament Standings</h3>
+                    <div>
+                        {standings.map((standing, idx) => (
+                            <div key={standing.player.id} className="leaderboard-item">
+                                <div className="flex gap-3">
+                                    <div className={`rank ${idx === 0 ? 'first' : 'other'}`}>#{idx + 1}</div>
+                                    <div>
+                                        <div className="font-semibold text-wood-dark">{standing.player.name}</div>
+                                        <div className="text-sm text-wood-medium">{standing.gamesPlayed} games</div>
+                                    </div>
+                                </div>
+                                <div className="text-right">
+                                    <div className="font-bold text-wheat" style={{ fontSize: '1.4rem' }}>{standing.totalPoints} pts</div>
+                                    <div className="text-sm text-wood-medium">{standing.wins} victories</div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            );
+        }
+
+        function NewGameForm({ tournamentId, players, onSubmit, onCancel }) {
+            const [gameType, setGameType] = useState('base');
+            const [selectedPlayers, setSelectedPlayers] = useState([]);
+            const [scores, setScores] = useState([]);
+
+            const handlePlayerToggle = (playerId) => {
+                if (selectedPlayers.includes(playerId)) {
+                    setSelectedPlayers(selectedPlayers.filter(id => id !== playerId));
+                    setScores(scores.filter(s => s.playerId !== playerId));
+                } else if (selectedPlayers.length < 6) {
+                    setSelectedPlayers([...selectedPlayers, playerId]);
+                    setScores([...scores, { playerId, breakdown: {}, totalPoints: 0, placement: 0 }]);
+                }
+            };
+
+            const updateScore = (playerId, source, value) => {
+                setScores(scores.map(score => {
+                    if (score.playerId === playerId) {
+                        const newBreakdown = { ...score.breakdown, [source]: parseInt(value) || 0 };
+                        const totalPoints = Object.values(newBreakdown).reduce((sum, val) => sum + val, 0);
+                        return { ...score, breakdown: newBreakdown, totalPoints };
+                    }
+                    return score;
+                }));
+            };
+
+            const handleSubmit = (e) => {
+                e.preventDefault();
+                const sortedScores = [...scores].sort((a, b) => b.totalPoints - a.totalPoints);
+                const rankedScores = sortedScores.map((score, idx) => ({ ...score, placement: idx + 1 }));
+                onSubmit(tournamentId, { gameType, scores: rankedScores });
+            };
+
+            const pointSources = POINT_SOURCES[gameType] || POINT_SOURCES.base;
+
+            return (
+                <form onSubmit={handleSubmit} className="form-bg">
+                    <h3 className="mb-4">📜 Log New Conquest</h3>
+
+                    <div className="form-group">
+                        <label className="form-label">Game Variant</label>
+                        <select value={gameType} onChange={(e) => setGameType(e.target.value)} className="form-select">
+                            {GAME_TYPES.map(gt => (
+                                <option key={gt.id} value={gt.id}>{gt.name}</option>
+                            ))}
+                        </select>
+                    </div>
+
+                    <div className="form-group">
+                        <label className="form-label">Select Settlers (3-6)</label>
+                        <div className="grid grid-cols-2 md-grid-cols-3 gap-2">
+                            {players.map(player => (
+                                <button
+                                    key={player.id}
+                                    type="button"
+                                    onClick={() => handlePlayerToggle(player.id)}
+                                    className={`player-select-btn ${selectedPlayers.includes(player.id) ? 'selected' : ''}`}
+                                >
+                                    {player.name}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    {selectedPlayers.length > 0 && (
+                        <div className="mb-4">
+                            <h4 className="mb-3">⚔️ Record Victory Points</h4>
+                            {selectedPlayers.map(playerId => {
+                                const player = players.find(p => p.id === playerId);
+                                const score = scores.find(s => s.playerId === playerId);
+                                return (
+                                    <div key={playerId} className="score-entry-card">
+                                        <div className="font-semibold mb-3 text-wheat" style={{ fontSize: '1.2rem' }}>
+                                            🏘️ {player.name}
+                                        </div>
+                                        <div className="score-input-grid">
+                                            {pointSources.map(source => (
+                                                <div key={source.id} className="score-input-group">
+                                                    <label>{source.name}</label>
+                                                    <input
+                                                        type="number"
+                                                        min="0"
+                                                        value={score?.breakdown[source.id] || ''}
+                                                        onChange={(e) => updateScore(playerId, source.id, e.target.value)}
+                                                        placeholder="0"
+                                                    />
+                                                </div>
+                                            ))}
+                                        </div>
+                                        <div className="mt-3 text-right">
+                                            <span className="text-sm text-wood-medium">Total Victory Points: </span>
+                                            <span className="text-lg font-bold text-wheat" style={{ fontSize: '1.8rem' }}>
+                                                {score?.totalPoints || 0} ⬢
+                                            </span>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    )}
+
+                    <div className="grid grid-cols-2 gap-2">
+                        <button type="submit" disabled={selectedPlayers.length < 3} className="btn btn-success">
+                            ✅ Record Battle
+                        </button>
+                        <button type="button" onClick={onCancel} className="btn btn-secondary">
+                            Cancel
+                        </button>
+                    </div>
+                </form>
+            );
+        }
+
+        function GameCard({ game, players, gameNumber }) {
+            return (
+                <div className="game-card">
+                    <div className="flex-between mb-3">
+                        <div>
+                            <h4>Battle #{gameNumber}</h4>
+                            <p className="text-sm text-wood-medium">
+                                {GAME_TYPES.find(gt => gt.id === game.gameType)?.name}
+                            </p>
+                        </div>
+                        <div className="text-sm text-wood-medium">
+                            {new Date(game.date).toLocaleDateString()}
+                        </div>
+                    </div>
+                    <div>
+                        {game.scores.sort((a, b) => a.placement - b.placement).map(score => {
+                            const player = players.find(p => p.id === score.playerId);
+                            return (
+                                <div key={score.playerId} className={`game-score-row ${score.placement === 1 ? 'winner' : 'regular'}`}>
+                                    <div className="flex gap-2">
+                                        <span className="font-semibold text-wood-medium">#{score.placement}</span>
+                                        <span className="font-medium text-wood-dark">
+                                            {player?.name || 'Unknown'}
+                                            {score.placement === 1 && ' 👑'}
+                                        </span>
+                                    </div>
+                                    <span className="font-bold text-wheat">{score.totalPoints} pts</span>
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+            );
+        }
+
+        function PlayersView({ players, showNewPlayer, setShowNewPlayer, addPlayer, deletePlayer }) {
+            const [newPlayerName, setNewPlayerName] = useState('');
+
+            const handleAddPlayer = (e) => {
+                e.preventDefault();
+                if (newPlayerName.trim()) {
+                    addPlayer(newPlayerName.trim());
+                    setNewPlayerName('');
+                    setShowNewPlayer(false);
+                }
+            };
+
+            return (
+                <div>
+                    <div className="card">
+                        <div className="flex-between mb-4">
+                            <h2>🏘️ Settlers Registry</h2>
+                            <button onClick={() => setShowNewPlayer(true)} className="btn btn-blue">
+                                ➕ Add Settler
+                            </button>
+                        </div>
+
+                        {showNewPlayer && (
+                            <form onSubmit={handleAddPlayer} className="form-bg">
+                                <div className="form-group">
+                                    <label className="form-label">Settler Name</label>
+                                    <input
+                                        type="text"
+                                        value={newPlayerName}
+                                        onChange={(e) => setNewPlayerName(e.target.value)}
+                                        className="form-input"
+                                        placeholder="Enter name"
+                                        required
+                                    />
+                                </div>
+                                <div className="grid grid-cols-2 gap-2">
+                                    <button type="submit" className="btn btn-blue">Add Settler</button>
+                                    <button type="button" onClick={() => { setShowNewPlayer(false); setNewPlayerName(''); }} className="btn btn-secondary">Cancel</button>
+                                </div>
+                            </form>
+                        )}
+
+                        {players.length === 0 ? (
+                            <p className="empty-state">No settlers yet. Add your first colonist!</p>
+                        ) : (
+                            <div className="grid grid-cols-1 md-grid-cols-2 lg-grid-cols-3 mt-6">
+                                {players.map(player => (
+                                    <div key={player.id} className="player-card" style={{ position: 'relative' }}>
+                                        <button
+                                            onClick={() => deletePlayer(player.id)}
+                                            className="btn btn-secondary"
+                                            style={{
+                                                position: 'absolute',
+                                                top: '1rem',
+                                                right: '1rem',
+                                                padding: '0.5rem 1rem',
+                                                fontSize: '0.85rem',
+                                                background: 'linear-gradient(135deg, #d32f2f 0%, #c62828 100%)',
+                                                color: 'white',
+                                                border: '2px solid #b71c1c',
+                                                zIndex: 10
+                                            }}
+                                        >
+                                            🗑️
+                                        </button>
+                                        <h3 className="mb-3">{player.name}</h3>
+                                        <div className="text-sm text-wood-dark">
+                                            <div className="info-row">
+                                                <span className="info-label">Games Played:</span>
+                                                <span className="info-value">{player.gamesPlayed}</span>
+                                            </div>
+                                            <div className="info-row">
+                                                <span className="info-label">Victories:</span>
+                                                <span className="info-value">{player.wins}</span>
+                                            </div>
+                                            <div className="info-row">
+                                                <span className="info-label">Win Rate:</span>
+                                                <span className="info-value">
+                                                    {player.gamesPlayed > 0 ? `${Math.round((player.wins / player.gamesPlayed) * 100)}%` : 'N/A'}
+                                                </span>
+                                            </div>
+                                            <div className="info-row">
+                                                <span className="info-label">Total Points:</span>
+                                                <span className="info-value">{player.totalPoints}</span>
+                                            </div>
+                                            <div className="info-row">
+                                                <span className="info-label">Avg Points:</span>
+                                                <span className="info-value">
+                                                    {player.gamesPlayed > 0 ? (player.totalPoints / player.gamesPlayed).toFixed(1) : 'N/A'}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                </div>
+            );
+        }
+
+        function StatsView({ tournaments, players }) {
+            const allGames = tournaments.flatMap(t => t.games);
+            const totalGames = allGames.length;
+
+            const gameTypeStats = GAME_TYPES.map(gt => ({
+                ...gt,
+                count: allGames.filter(g => g.gameType === gt.id).length,
+            })).filter(s => s.count > 0);
+
+            const playerStats = players
+                .filter(p => p.gamesPlayed > 0)
+                .map(player => ({
+                    ...player,
+                    winRate: player.gamesPlayed > 0 ? (player.wins / player.gamesPlayed) * 100 : 0,
+                    avgPoints: player.gamesPlayed > 0 ? player.totalPoints / player.gamesPlayed : 0,
+                }))
+                .sort((a, b) => {
+                    if (b.totalPoints !== a.totalPoints) return b.totalPoints - a.totalPoints;
+                    if (b.wins !== a.wins) return b.wins - a.wins;
+                    return b.winRate - a.winRate;
+                });
+
+            return (
+                <div>
+                    <div className="card">
+                        <h2 className="mb-4">📊 Grand Chronicles</h2>
+                        <div className="grid grid-cols-2 md-grid-cols-4">
+                            <div className="stat-card wheat">
+                                <div className="stat-value">{tournaments.length}</div>
+                                <div className="stat-label">Tournaments</div>
+                            </div>
+                            <div className="stat-card ore">
+                                <div className="stat-value">{totalGames}</div>
+                                <div className="stat-label">Total Battles</div>
+                            </div>
+                            <div className="stat-card sheep">
+                                <div className="stat-value">{players.length}</div>
+                                <div className="stat-label">Settlers</div>
+                            </div>
+                            <div className="stat-card brick">
+                                <div className="stat-value">
+                                    {totalGames > 0 ? (allGames.reduce((sum, g) => sum + g.scores.length, 0) / totalGames).toFixed(1) : 'N/A'}
+                                </div>
+                                <div className="stat-label">Avg Players</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {gameTypeStats.length > 0 && (
+                        <div className="card">
+                            <h2 className="mb-4">⬡ Games by Variant</h2>
+                            <div>
+                                {gameTypeStats.map(stat => (
+                                    <div key={stat.id} className="mb-3">
+                                        <div className="flex-between mb-1">
+                                            <span className="font-medium text-wood-dark">{stat.name}</span>
+                                            <span className="text-wood-medium">{stat.count} games ({Math.round((stat.count / totalGames) * 100)}%)</span>
+                                        </div>
+                                        <div className="progress-bar-container">
+                                            <div className="progress-bar" style={{ width: `${(stat.count / totalGames) * 100}%` }}></div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {playerStats.length > 0 && (
+                        <div className="card">
+                            <h2 className="mb-4">👑 Hall of Champions</h2>
+                            <div>
+                                {playerStats.map((player, idx) => (
+                                    <div key={player.id} className="ranking-card">
+                                        <div className="flex-between mb-2">
+                                            <div className="flex gap-3">
+                                                <span className={`rank ${idx === 0 ? 'first' : 'other'}`}>
+                                                    #{idx + 1}
+                                                </span>
+                                                <span className="text-lg font-bold text-wood-dark">{player.name}</span>
+                                            </div>
+                                            <span className="text-2xl font-bold text-wheat">{player.winRate.toFixed(1)}%</span>
+                                        </div>
+                                        <div className="grid grid-cols-2 md-grid-cols-4 gap-2 text-sm text-wood-medium">
+                                            <div className="info-row">
+                                                <span>Games:</span>
+                                                <span className="font-semibold">{player.gamesPlayed}</span>
+                                            </div>
+                                            <div className="info-row">
+                                                <span>Wins:</span>
+                                                <span className="font-semibold">{player.wins}</span>
+                                            </div>
+                                            <div className="info-row">
+                                                <span>Avg Pts:</span>
+                                                <span className="font-semibold">{player.avgPoints.toFixed(1)}</span>
+                                            </div>
+                                            <div className="info-row">
+                                                <span>Total Pts:</span>
+                                                <span className="font-semibold">{player.totalPoints}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
+        ReactDOM.render(<CatanTournamentTracker />, document.getElementById('root'));
+    </script>
+</body>
+
+</html>
