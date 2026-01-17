@@ -168,6 +168,36 @@ Players are ranked in the following order:
 - Development cards with VP can be played immediately for victory
 - Knight cards must wait until next turn (cannot win immediately after playing)
 
+### Custom Weighted Tournament Scoring (This Tracker)
+
+This tracker implements a **custom weighted scoring system** for tournament leaderboards that provides a more balanced ranking:
+
+**Scoring Formula:**
+- **33% weight** for Games Played (normalized to 28.4%)
+- **50% weight** for Games Won (normalized to 43.1%)
+- **33% weight** for Total Points (normalized to 28.4%)
+
+**How It Works:**
+1. Each metric is normalized to a 0-100 scale based on the maximum value in the tournament
+2. The normalized values are multiplied by their respective weights
+3. The three weighted scores are summed to create a final Tournament Score (0-100)
+
+**Example:**
+- Player A: 10 games, 5 wins, 95 points → Score: 85.2
+- Player B: 8 games, 6 wins, 88 points → Score: 87.5
+- Player B ranks higher despite playing fewer games because of higher win rate
+
+This system rewards consistent participation, winning performance, and point accumulation equally.
+
+---
+
+## 🎯 Point Values (Custom Rules)
+
+### Cities and Metropolises
+- **Cities:** 2 Victory Points each
+- **Metropolises:** 2 Victory Points each (additional bonus beyond city value)
+- **Total for Metropolis:** 4 VP (2 for city + 2 for metropolis upgrade)
+
 ---
 
 ## 📝 Using the Tracker
