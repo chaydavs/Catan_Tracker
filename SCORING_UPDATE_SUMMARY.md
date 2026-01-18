@@ -11,13 +11,13 @@
 
 **New System (Skill-Weighted Formula):**
 ```
-Tournament Points = (0.25 × Games Played) + (0.5 × Avg VPs per Game) + (7 × Wins)
+Tournament Points = (0.25 × Games Played) + (0.5 × Avg VPs per Game) + (3 × Wins)
 ```
 
 **Point Values:**
 - **0.25 points** per game played (minimal participation credit)
 - **0.5 × average VPs per game** (performance quality)
-- **7 points** per game won (highest weight - competitive achievement bonus)
+- **3 points** per game won (competitive achievement bonus)
 
 **How It Works:**
 - Each player accumulates absolute points based on the formula

@@ -1667,9 +1667,9 @@
                     const gamesPlayed = playerGames.length;
 
                     // Calculate tournament score using skill-weighted formula
-                    // 0.25 points per game + 0.5 × (avg points per game) + 7 points per win
+                    // 0.25 points per game + 0.5 × (avg points per game) + 3 points per win
                     const avgPointsPerGame = gamesPlayed > 0 ? totalPoints / gamesPlayed : 0;
-                    const tournamentScore = (0.25 * gamesPlayed) + (0.5 * avgPointsPerGame) + (7 * wins);
+                    const tournamentScore = (0.25 * gamesPlayed) + (0.5 * avgPointsPerGame) + (3 * wins);
 
                     return { player, wins, totalPoints, gamesPlayed, tournamentScore };
                 })
@@ -1978,7 +1978,7 @@
                     const winRate = player.gamesPlayed > 0 ? (player.wins / player.gamesPlayed) * 100 : 0;
                     const avgPoints = player.gamesPlayed > 0 ? player.totalPoints / player.gamesPlayed : 0;
                     // Calculate tournament score using the same formula as leaderboard
-                    const tournamentScore = (0.25 * player.gamesPlayed) + (0.5 * avgPoints) + (7 * player.wins);
+                    const tournamentScore = (0.25 * player.gamesPlayed) + (0.5 * avgPoints) + (3 * player.wins);
                     return { ...player, winRate, avgPoints, tournamentScore };
                 })
                 .sort((a, b) => {
