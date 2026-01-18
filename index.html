@@ -1735,7 +1735,7 @@
                                                     {row.avgPoints.toFixed(1)}
                                                 </td>
                                                 <td style={{ padding: '0.5rem', textAlign: 'center', fontWeight: 'bold', color: 'var(--wheat)', backgroundColor: 'rgba(218, 165, 32, 0.2)' }}>
-                                                    {row.tournamentScore.toFixed(1)}
+                                                    {row.tournamentScore.toFixed(2)}
                                                 </td>
                                             </tr>
                                         ))}
@@ -1804,7 +1804,7 @@
                                     </div>
                                 </div>
                                 <div className="text-right">
-                                    <div className="font-bold text-wheat" style={{ fontSize: '1.4rem' }}>{standing.tournamentScore.toFixed(1)} pts</div>
+                                    <div className="font-bold text-wheat" style={{ fontSize: '1.4rem' }}>{standing.tournamentScore.toFixed(2)} pts</div>
                                     <div className="text-sm text-wood-medium">{standing.totalPoints} VPs • {standing.wins} wins</div>
                                 </div>
                             </div>
@@ -2069,7 +2069,7 @@
                                                     {player.name}
                                                 </td>
                                                 <td style={{ padding: '0.75rem', textAlign: 'center', fontWeight: 'bold', color: 'var(--wheat)' }}>
-                                                    {player.tournamentScore.toFixed(1)}
+                                                    {player.tournamentScore.toFixed(2)}
                                                 </td>
                                                 <td style={{ padding: '0.75rem', textAlign: 'center', color: 'var(--wood-medium)' }}>
                                                     {player.gamesPlayed}
@@ -2248,7 +2248,7 @@
                                                 </span>
                                                 <span className="text-lg font-bold text-wood-dark">{player.name}</span>
                                             </div>
-                                            <span className="text-2xl font-bold text-wheat">{player.tournamentScore.toFixed(1)} pts</span>
+                                            <span className="text-2xl font-bold text-wheat">{player.tournamentScore.toFixed(2)} pts</span>
                                         </div>
                                         <div className="grid grid-cols-2 md-grid-cols-4 gap-2 text-sm text-wood-medium">
                                             <div className="info-row">
