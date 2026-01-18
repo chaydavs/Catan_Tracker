@@ -4,20 +4,20 @@
 
 ## Changes Implemented
 
-### 1. New Absolute Point Tournament Scoring System ✅
+### 1. Skill-Weighted Tournament Scoring System ✅
 
 **Previous System:**
 - Players ranked solely by total victory points accumulated
 
-**New System (Excel Formula):**
+**New System (Skill-Weighted Formula):**
 ```
-Tournament Points = (0.5 × Games Played) + (0.5 × Avg VPs per Game) + (3 × Wins)
+Tournament Points = (0.25 × Games Played) + (0.5 × Avg VPs per Game) + (5 × Wins)
 ```
 
 **Point Values:**
-- **0.5 points** per game played (participation)
+- **0.25 points** per game played (minimal participation credit)
 - **0.5 × average VPs per game** (performance quality)
-- **3 points** per game won (winning bonus)
+- **5 points** per game won (competitive achievement bonus)
 
 **How It Works:**
 - Each player accumulates absolute points based on the formula
@@ -28,11 +28,12 @@ Tournament Points = (0.5 × Games Played) + (0.5 × Avg VPs per Game) + (3 × Wi
   - Games Played count
 
 **Benefits:**
-- Simple, transparent scoring that matches Excel tracking
-- Heavily rewards winning (3 pts per win)
-- Gives credit for participation and performance
-- Easy to understand and calculate manually
-- Consistent with existing Excel-based tournament tracking
+- Properly rewards competitive difficulty (winning is 5-6x harder than playing)
+- Reduces "grind" advantage - can't win by just playing many games
+- Emphasizes skill and performance over mere attendance
+- Better suited for competitive tournaments
+- Still gives credit for consistent performance (avg VPs)
+- Simple, transparent, and easy to calculate manually
 
 ### 2. Point Value Clarifications ✅
 

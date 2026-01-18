@@ -170,30 +170,36 @@ Players are ranked in the following order:
 
 ### Custom Tournament Scoring (This Tracker)
 
-This tracker implements an **absolute point-based scoring system** (matching the Excel tracking sheet) for tournament leaderboards:
+This tracker implements a **skill-weighted scoring system** that rewards competitive achievement:
 
 **Scoring Formula:**
 ```
-Tournament Points = (0.5 × Games Played) + (0.5 × Average VPs per Game) + (3 × Wins)
+Tournament Points = (0.25 × Games Played) + (0.5 × Average VPs per Game) + (5 × Wins)
 ```
 
 **Point Breakdown:**
-- **0.5 points** per game played (rewards participation)
-- **0.5 × average VPs per game** (rewards performance quality)
-- **3 points** per game won (heavily rewards winning)
+- **0.25 points** per game played (minimal participation credit)
+- **0.5 × average VPs per game** (rewards consistent performance)
+- **5 points** per game won (heavily rewards competitive wins)
 
 **How It Works:**
-1. Each game played adds 0.5 points to your tournament score
+1. Each game played adds 0.25 points (reduced from 0.5 to de-emphasize mere attendance)
 2. Your average victory points per game is multiplied by 0.5
-3. Each game you win adds 3 points
+3. Each game you win adds 5 points (increased from 3 to properly reward difficulty)
 4. Players are ranked by total tournament points (highest to lowest)
 
 **Example:**
-- Player A: 10 games, 5 wins, 95 VPs (9.5 avg) → Score: (0.5×10) + (0.5×9.5) + (3×5) = **24.75 points**
-- Player B: 8 games, 6 wins, 88 VPs (11 avg) → Score: (0.5×8) + (0.5×11) + (3×6) = **27.5 points**
-- Player B ranks higher due to more wins and higher average VPs per game
+- Player A: 10 games, 5 wins, 95 VPs (9.5 avg) → Score: (0.25×10) + (0.5×9.5) + (5×5) = **32.25 points**
+- Player B: 8 games, 6 wins, 88 VPs (11 avg) → Score: (0.25×8) + (0.5×11) + (5×6) = **37.5 points**
+- Player C: 20 games, 2 wins, 140 VPs (7 avg) → Score: (0.25×20) + (0.5×7) + (5×2) = **18.5 points**
 
-This system rewards winning heavily (3 pts per win) while also giving credit for participation and consistent performance.
+**Why This Formula:**
+- Winning is 5-6x harder than just playing, so it's worth 20x the points
+- Reduces "grind" advantage (Player C above plays 2x more but ranks lower)
+- Rewards skill and competitive success over mere participation
+- Better suited for competitive tournaments
+
+This system heavily rewards winning (5 pts per win) while giving appropriate credit for performance quality and minimal credit for participation.
 
 ---
 
