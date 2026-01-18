@@ -1666,26 +1666,9 @@
                     const totalPoints = playerGames.reduce((sum, s) => sum + s.totalPoints, 0);
                     const gamesPlayed = playerGames.length;
 
-                    // Calculate tournament score with weighted percentages
-                    // 33% for games played, 50% for wins, 33% for total points
-                    // Normalized to: 28.4% games played, 43.1% wins, 28.4% points
-                    const maxGames = Math.max(...players.map(p => {
-                        const pg = tournament.games.flatMap(g => g.scores.filter(s => s.playerId === p.id));
-                        return pg.length;
-                    }));
-                    const maxWins = Math.max(...players.map(p => {
-                        const pg = tournament.games.flatMap(g => g.scores.filter(s => s.playerId === p.id));
-                        return pg.filter(s => s.placement === 1).length;
-                    }));
-                    const maxPoints = Math.max(...players.map(p => {
-                        const pg = tournament.games.flatMap(g => g.scores.filter(s => s.playerId === p.id));
-                        return pg.reduce((sum, s) => sum + s.totalPoints, 0);
-                    }));
-
-                    const gamesPlayedScore = maxGames > 0 ? (gamesPlayed / maxGames) * 28.4 : 0;
-                    const winsScore = maxWins > 0 ? (wins / maxWins) * 43.1 : 0;
-                    const pointsScore = maxPoints > 0 ? (totalPoints / maxPoints) * 28.4 : 0;
-                    const tournamentScore = gamesPlayedScore + winsScore + pointsScore;
+                    // Calculate tournament score using Excel formula
+                    // 0.5 points per game played + 0.5 points per VP + 3 points per win
+                    const tournamentScore = (0.5 * gamesPlayed) + (0.5 * totalPoints) + (3 * wins);
 
                     return { player, wins, totalPoints, gamesPlayed, tournamentScore };
                 })
@@ -1708,8 +1691,8 @@
                                     </div>
                                 </div>
                                 <div className="text-right">
-                                    <div className="font-bold text-wheat" style={{ fontSize: '1.4rem' }}>{standing.tournamentScore.toFixed(1)} score</div>
-                                    <div className="text-sm text-wood-medium">{standing.totalPoints} total pts</div>
+                                    <div className="font-bold text-wheat" style={{ fontSize: '1.4rem' }}>{standing.tournamentScore.toFixed(1)} pts</div>
+                                    <div className="text-sm text-wood-medium">{standing.totalPoints} VPs • {standing.wins} wins</div>
                                 </div>
                             </div>
                         ))}

@@ -4,29 +4,35 @@
 
 ## Changes Implemented
 
-### 1. New Weighted Tournament Scoring System ✅
+### 1. New Absolute Point Tournament Scoring System ✅
 
 **Previous System:**
-- Players ranked solely by total points accumulated
+- Players ranked solely by total victory points accumulated
 
-**New System:**
-- **33% weight** for Games Played (normalized to 28.4%)
-- **50% weight** for Games Won (normalized to 43.1%)  
-- **33% weight** for Total Points (normalized to 28.4%)
+**New System (Excel Formula):**
+```
+Tournament Points = (0.5 × Games Played) + (0.5 × Total VPs) + (3 × Wins)
+```
+
+**Point Values:**
+- **0.5 points** per game played (participation)
+- **0.5 points** per victory point earned (performance)
+- **3 points** per game won (winning bonus)
 
 **How It Works:**
-- Each metric is normalized to 0-100 scale based on tournament maximum
-- Weighted values are summed to create a Tournament Score (0-100)
-- Leaderboard now displays:
-  - Tournament Score (primary ranking metric)
-  - Total Points (secondary display)
-  - Games Played and Wins (in subtitle)
+- Each player accumulates absolute points based on the formula
+- No normalization - scores grow with tournament participation
+- Leaderboard displays:
+  - Tournament Points (primary ranking metric)
+  - Victory Points and Wins (in subtitle)
+  - Games Played count
 
 **Benefits:**
-- More balanced ranking system
-- Rewards participation, winning, and point accumulation equally
-- Prevents players with many games but low win rate from dominating
-- Encourages both quality (wins) and quantity (participation)
+- Simple, transparent scoring that matches Excel tracking
+- Heavily rewards winning (3 pts per win)
+- Gives credit for participation and performance
+- Easy to understand and calculate manually
+- Consistent with existing Excel-based tournament tracking
 
 ### 2. Point Value Clarifications ✅
 
