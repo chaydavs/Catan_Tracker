@@ -1667,8 +1667,9 @@
                     const gamesPlayed = playerGames.length;
 
                     // Calculate tournament score using Excel formula
-                    // 0.5 points per game played + 0.5 points per VP + 3 points per win
-                    const tournamentScore = (0.5 * gamesPlayed) + (0.5 * totalPoints) + (3 * wins);
+                    // 0.5 points per game played + 0.5 × (avg points per game) + 3 points per win
+                    const avgPointsPerGame = gamesPlayed > 0 ? totalPoints / gamesPlayed : 0;
+                    const tournamentScore = (0.5 * gamesPlayed) + (0.5 * avgPointsPerGame) + (3 * wins);
 
                     return { player, wins, totalPoints, gamesPlayed, tournamentScore };
                 })

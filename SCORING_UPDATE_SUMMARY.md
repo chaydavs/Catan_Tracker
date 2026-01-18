@@ -11,12 +11,12 @@
 
 **New System (Excel Formula):**
 ```
-Tournament Points = (0.5 × Games Played) + (0.5 × Total VPs) + (3 × Wins)
+Tournament Points = (0.5 × Games Played) + (0.5 × Avg VPs per Game) + (3 × Wins)
 ```
 
 **Point Values:**
 - **0.5 points** per game played (participation)
-- **0.5 points** per victory point earned (performance)
+- **0.5 × average VPs per game** (performance quality)
 - **3 points** per game won (winning bonus)
 
 **How It Works:**

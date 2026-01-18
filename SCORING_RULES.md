@@ -174,26 +174,26 @@ This tracker implements an **absolute point-based scoring system** (matching the
 
 **Scoring Formula:**
 ```
-Tournament Points = (0.5 × Games Played) + (0.5 × Total Victory Points) + (3 × Wins)
+Tournament Points = (0.5 × Games Played) + (0.5 × Average VPs per Game) + (3 × Wins)
 ```
 
 **Point Breakdown:**
 - **0.5 points** per game played (rewards participation)
-- **0.5 points** per victory point earned across all games (rewards performance)
+- **0.5 × average VPs per game** (rewards performance quality)
 - **3 points** per game won (heavily rewards winning)
 
 **How It Works:**
 1. Each game played adds 0.5 points to your tournament score
-2. Every victory point you earn in any game adds 0.5 points
+2. Your average victory points per game is multiplied by 0.5
 3. Each game you win adds 3 points
 4. Players are ranked by total tournament points (highest to lowest)
 
 **Example:**
-- Player A: 10 games, 5 wins, 95 VPs → Score: (0.5×10) + (0.5×95) + (3×5) = **67.5 points**
-- Player B: 8 games, 6 wins, 88 VPs → Score: (0.5×8) + (0.5×88) + (3×6) = **66.0 points**
-- Player A ranks higher due to more total VPs despite fewer wins
+- Player A: 10 games, 5 wins, 95 VPs (9.5 avg) → Score: (0.5×10) + (0.5×9.5) + (3×5) = **24.75 points**
+- Player B: 8 games, 6 wins, 88 VPs (11 avg) → Score: (0.5×8) + (0.5×11) + (3×6) = **27.5 points**
+- Player B ranks higher due to more wins and higher average VPs per game
 
-This system rewards winning heavily (3 pts per win) while also giving credit for participation and accumulating victory points.
+This system rewards winning heavily (3 pts per win) while also giving credit for participation and consistent performance.
 
 ---
 
