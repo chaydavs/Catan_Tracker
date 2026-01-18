@@ -1608,6 +1608,34 @@
         }
 
         function TournamentDetail({ tournament, players, onBack, showNewGame, setShowNewGame, addGame, deleteGame }) {
+            const [viewMode, setViewMode] = useState('standard'); // 'standard' or 'matrix'
+
+            // Build game-by-game matrix data
+            const matrixData = players.map(player => {
+                const playerGames = tournament.games.map(game => {
+                    const score = game.scores.find(s => s.playerId === player.id);
+                    return score ? score.totalPoints : null;
+                });
+                const gamesPlayed = playerGames.filter(s => s !== null).length;
+                const totalPoints = playerGames.reduce((sum, s) => sum + (s || 0), 0);
+                const wins = tournament.games.filter(game => {
+                    const score = game.scores.find(s => s.playerId === player.id);
+                    return score && score.placement === 1;
+                }).length;
+                const avgPoints = gamesPlayed > 0 ? totalPoints / gamesPlayed : 0;
+                const tournamentScore = (0.25 * gamesPlayed) + (0.5 * avgPoints) + (3 * wins);
+
+                return {
+                    player,
+                    gameScores: playerGames,
+                    gamesPlayed,
+                    wins,
+                    totalPoints,
+                    avgPoints,
+                    tournamentScore
+                };
+            }).sort((a, b) => b.tournamentScore - a.tournamentScore);
+
             return (
                 <div>
                     <div className="card">
@@ -1618,9 +1646,17 @@
                                 <h2>{tournament.name}</h2>
                                 <p className="subtitle">Format: {tournament.format}</p>
                             </div>
-                            <button onClick={() => setShowNewGame(true)} className="btn btn-success">
-                                📜 Log Game
-                            </button>
+                            <div className="flex gap-2">
+                                <button
+                                    onClick={() => setViewMode(viewMode === 'standard' ? 'matrix' : 'standard')}
+                                    className="btn btn-secondary"
+                                >
+                                    {viewMode === 'standard' ? '📊 Matrix View' : '📋 Standard View'}
+                                </button>
+                                <button onClick={() => setShowNewGame(true)} className="btn btn-success">
+                                    📜 Log Game
+                                </button>
+                            </div>
                         </div>
 
                         {showNewGame && (
@@ -1632,7 +1668,83 @@
                             />
                         )}
 
-                        <TournamentLeaderboard tournament={tournament} players={players} />
+                        {viewMode === 'matrix' && tournament.games.length > 0 ? (
+                            <div style={{ overflowX: 'auto', marginBottom: '2rem' }}>
+                                <h3 className="mb-3">📊 Game-by-Game Matrix</h3>
+                                <table style={{
+                                    width: '100%',
+                                    borderCollapse: 'collapse',
+                                    backgroundColor: 'var(--parchment)',
+                                    border: '2px solid var(--wood-dark)',
+                                    fontSize: '0.9rem'
+                                }}>
+                                    <thead>
+                                        <tr style={{ backgroundColor: 'var(--wood-medium)', color: 'var(--parchment)' }}>
+                                            <th style={{ padding: '0.5rem', textAlign: 'left', borderBottom: '2px solid var(--wood-dark)', position: 'sticky', left: 0, backgroundColor: 'var(--wood-medium)', zIndex: 2 }}>#</th>
+                                            <th style={{ padding: '0.5rem', textAlign: 'left', borderBottom: '2px solid var(--wood-dark)', minWidth: '150px', position: 'sticky', left: '40px', backgroundColor: 'var(--wood-medium)', zIndex: 2 }}>Player</th>
+                                            {tournament.games.map((game, idx) => (
+                                                <th key={game.id} style={{ padding: '0.5rem', textAlign: 'center', borderBottom: '2px solid var(--wood-dark)', minWidth: '60px' }}>
+                                                    G{idx + 1}
+                                                </th>
+                                            ))}
+                                            <th style={{ padding: '0.5rem', textAlign: 'center', borderBottom: '2px solid var(--wood-dark)', backgroundColor: 'rgba(218, 165, 32, 0.2)', fontWeight: 'bold' }}>Games</th>
+                                            <th style={{ padding: '0.5rem', textAlign: 'center', borderBottom: '2px solid var(--wood-dark)', backgroundColor: 'rgba(218, 165, 32, 0.2)', fontWeight: 'bold' }}>Wins</th>
+                                            <th style={{ padding: '0.5rem', textAlign: 'center', borderBottom: '2px solid var(--wood-dark)', backgroundColor: 'rgba(218, 165, 32, 0.2)', fontWeight: 'bold' }}>Total</th>
+                                            <th style={{ padding: '0.5rem', textAlign: 'center', borderBottom: '2px solid var(--wood-dark)', backgroundColor: 'rgba(218, 165, 32, 0.2)', fontWeight: 'bold' }}>Avg</th>
+                                            <th style={{ padding: '0.5rem', textAlign: 'center', borderBottom: '2px solid var(--wood-dark)', backgroundColor: 'rgba(218, 165, 32, 0.3)', fontWeight: 'bold' }}>Score</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {matrixData.map((row, idx) => (
+                                            <tr key={row.player.id} style={{
+                                                backgroundColor: idx % 2 === 0 ? 'var(--parchment)' : 'rgba(139, 90, 43, 0.05)',
+                                                borderBottom: '1px solid var(--wood-light)'
+                                            }}>
+                                                <td style={{ padding: '0.5rem', fontWeight: 'bold', color: 'var(--wood-dark)', position: 'sticky', left: 0, backgroundColor: idx % 2 === 0 ? 'var(--parchment)' : 'rgba(139, 90, 43, 0.05)', zIndex: 1 }}>
+                                                    {idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `${idx + 1}`}
+                                                </td>
+                                                <td style={{ padding: '0.5rem', fontWeight: '600', color: 'var(--wood-dark)', position: 'sticky', left: '40px', backgroundColor: idx % 2 === 0 ? 'var(--parchment)' : 'rgba(139, 90, 43, 0.05)', zIndex: 1 }}>
+                                                    {row.player.name}
+                                                </td>
+                                                {row.gameScores.map((score, gameIdx) => {
+                                                    const game = tournament.games[gameIdx];
+                                                    const playerScore = game.scores.find(s => s.playerId === row.player.id);
+                                                    const isWinner = playerScore && playerScore.placement === 1;
+                                                    return (
+                                                        <td key={gameIdx} style={{
+                                                            padding: '0.5rem',
+                                                            textAlign: 'center',
+                                                            color: score === null ? 'var(--wood-light)' : isWinner ? 'var(--wheat)' : 'var(--wood-medium)',
+                                                            fontWeight: isWinner ? 'bold' : 'normal',
+                                                            backgroundColor: isWinner ? 'rgba(218, 165, 32, 0.15)' : 'transparent'
+                                                        }}>
+                                                            {score === null ? '-' : isWinner ? `${score} 👑` : score}
+                                                        </td>
+                                                    );
+                                                })}
+                                                <td style={{ padding: '0.5rem', textAlign: 'center', fontWeight: '600', backgroundColor: 'rgba(218, 165, 32, 0.1)' }}>
+                                                    {row.gamesPlayed}
+                                                </td>
+                                                <td style={{ padding: '0.5rem', textAlign: 'center', fontWeight: '600', backgroundColor: 'rgba(218, 165, 32, 0.1)' }}>
+                                                    {row.wins}
+                                                </td>
+                                                <td style={{ padding: '0.5rem', textAlign: 'center', fontWeight: '600', backgroundColor: 'rgba(218, 165, 32, 0.1)' }}>
+                                                    {row.totalPoints}
+                                                </td>
+                                                <td style={{ padding: '0.5rem', textAlign: 'center', fontWeight: '600', backgroundColor: 'rgba(218, 165, 32, 0.1)' }}>
+                                                    {row.avgPoints.toFixed(1)}
+                                                </td>
+                                                <td style={{ padding: '0.5rem', textAlign: 'center', fontWeight: 'bold', color: 'var(--wheat)', backgroundColor: 'rgba(218, 165, 32, 0.2)' }}>
+                                                    {row.tournamentScore.toFixed(1)}
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        ) : (
+                            <TournamentLeaderboard tournament={tournament} players={players} />
+                        )}
 
                         <div className="mt-6">
                             <h3>📖 Chronicle of Battles ({tournament.games.length})</h3>
