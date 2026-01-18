@@ -1864,6 +1864,7 @@
 
         function PlayersView({ players, showNewPlayer, setShowNewPlayer, addPlayer, deletePlayer }) {
             const [newPlayerName, setNewPlayerName] = useState('');
+            const [viewMode, setViewMode] = useState('cards'); // 'cards' or 'table'
 
             const handleAddPlayer = (e) => {
                 e.preventDefault();
@@ -1874,14 +1875,30 @@
                 }
             };
 
+            // Calculate tournament scores for all players
+            const playersWithScores = players.map(player => {
+                const winRate = player.gamesPlayed > 0 ? (player.wins / player.gamesPlayed) * 100 : 0;
+                const avgPoints = player.gamesPlayed > 0 ? player.totalPoints / player.gamesPlayed : 0;
+                const tournamentScore = (0.25 * player.gamesPlayed) + (0.5 * avgPoints) + (3 * player.wins);
+                return { ...player, winRate, avgPoints, tournamentScore };
+            }).sort((a, b) => b.tournamentScore - a.tournamentScore);
+
             return (
                 <div>
                     <div className="card">
                         <div className="flex-between mb-4">
                             <h2>🏘️ Settlers Registry</h2>
-                            <button onClick={() => setShowNewPlayer(true)} className="btn btn-blue">
-                                ➕ Add Settler
-                            </button>
+                            <div className="flex gap-2">
+                                <button
+                                    onClick={() => setViewMode(viewMode === 'cards' ? 'table' : 'cards')}
+                                    className="btn btn-secondary"
+                                >
+                                    {viewMode === 'cards' ? '📊 Table View' : '🎴 Card View'}
+                                </button>
+                                <button onClick={() => setShowNewPlayer(true)} className="btn btn-blue">
+                                    ➕ Add Settler
+                                </button>
+                            </div>
                         </div>
 
                         {showNewPlayer && (
@@ -1906,6 +1923,79 @@
 
                         {players.length === 0 ? (
                             <p className="empty-state">No settlers yet. Add your first colonist!</p>
+                        ) : viewMode === 'table' ? (
+                            <div style={{ overflowX: 'auto', marginTop: '1.5rem' }}>
+                                <table style={{
+                                    width: '100%',
+                                    borderCollapse: 'collapse',
+                                    backgroundColor: 'var(--parchment)',
+                                    border: '2px solid var(--wood-dark)'
+                                }}>
+                                    <thead>
+                                        <tr style={{ backgroundColor: 'var(--wood-medium)', color: 'var(--parchment)' }}>
+                                            <th style={{ padding: '0.75rem', textAlign: 'left', borderBottom: '2px solid var(--wood-dark)' }}>#</th>
+                                            <th style={{ padding: '0.75rem', textAlign: 'left', borderBottom: '2px solid var(--wood-dark)' }}>Name</th>
+                                            <th style={{ padding: '0.75rem', textAlign: 'center', borderBottom: '2px solid var(--wood-dark)' }}>Score</th>
+                                            <th style={{ padding: '0.75rem', textAlign: 'center', borderBottom: '2px solid var(--wood-dark)' }}>Games</th>
+                                            <th style={{ padding: '0.75rem', textAlign: 'center', borderBottom: '2px solid var(--wood-dark)' }}>Wins</th>
+                                            <th style={{ padding: '0.75rem', textAlign: 'center', borderBottom: '2px solid var(--wood-dark)' }}>Win %</th>
+                                            <th style={{ padding: '0.75rem', textAlign: 'center', borderBottom: '2px solid var(--wood-dark)' }}>Total VPs</th>
+                                            <th style={{ padding: '0.75rem', textAlign: 'center', borderBottom: '2px solid var(--wood-dark)' }}>Avg VPs</th>
+                                            <th style={{ padding: '0.75rem', textAlign: 'center', borderBottom: '2px solid var(--wood-dark)' }}>Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {playersWithScores.map((player, idx) => (
+                                            <tr key={player.id} style={{
+                                                backgroundColor: idx % 2 === 0 ? 'var(--parchment)' : 'rgba(139, 90, 43, 0.05)',
+                                                borderBottom: '1px solid var(--wood-light)'
+                                            }}>
+                                                <td style={{ padding: '0.75rem', fontWeight: 'bold', color: 'var(--wood-dark)' }}>
+                                                    {idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `${idx + 1}`}
+                                                </td>
+                                                <td style={{ padding: '0.75rem', fontWeight: '600', color: 'var(--wood-dark)' }}>
+                                                    {player.name}
+                                                </td>
+                                                <td style={{ padding: '0.75rem', textAlign: 'center', fontWeight: 'bold', color: 'var(--wheat)' }}>
+                                                    {player.tournamentScore.toFixed(1)}
+                                                </td>
+                                                <td style={{ padding: '0.75rem', textAlign: 'center', color: 'var(--wood-medium)' }}>
+                                                    {player.gamesPlayed}
+                                                </td>
+                                                <td style={{ padding: '0.75rem', textAlign: 'center', color: 'var(--wood-medium)' }}>
+                                                    {player.wins}
+                                                </td>
+                                                <td style={{ padding: '0.75rem', textAlign: 'center', color: 'var(--wood-medium)' }}>
+                                                    {player.gamesPlayed > 0 ? `${player.winRate.toFixed(1)}%` : 'N/A'}
+                                                </td>
+                                                <td style={{ padding: '0.75rem', textAlign: 'center', color: 'var(--wood-medium)' }}>
+                                                    {player.totalPoints}
+                                                </td>
+                                                <td style={{ padding: '0.75rem', textAlign: 'center', color: 'var(--wood-medium)' }}>
+                                                    {player.gamesPlayed > 0 ? player.avgPoints.toFixed(1) : 'N/A'}
+                                                </td>
+                                                <td style={{ padding: '0.75rem', textAlign: 'center' }}>
+                                                    <button
+                                                        onClick={() => deletePlayer(player.id)}
+                                                        style={{
+                                                            padding: '0.25rem 0.75rem',
+                                                            fontSize: '0.85rem',
+                                                            background: 'linear-gradient(135deg, #d32f2f 0%, #c62828 100%)',
+                                                            color: 'white',
+                                                            border: '2px solid #b71c1c',
+                                                            borderRadius: '6px',
+                                                            cursor: 'pointer',
+                                                            fontWeight: '600'
+                                                        }}
+                                                    >
+                                                        🗑️
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
                         ) : (
                             <div className="grid grid-cols-1 md-grid-cols-2 lg-grid-cols-3 mt-6">
                                 {players.map(player => (
