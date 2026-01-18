@@ -1667,9 +1667,9 @@
                     const gamesPlayed = playerGames.length;
 
                     // Calculate tournament score using skill-weighted formula
-                    // 0.25 points per game + 0.5 × (avg points per game) + 5 points per win
+                    // 0.25 points per game + 0.5 × (avg points per game) + 7 points per win
                     const avgPointsPerGame = gamesPlayed > 0 ? totalPoints / gamesPlayed : 0;
-                    const tournamentScore = (0.25 * gamesPlayed) + (0.5 * avgPointsPerGame) + (5 * wins);
+                    const tournamentScore = (0.25 * gamesPlayed) + (0.5 * avgPointsPerGame) + (7 * wins);
 
                     return { player, wins, totalPoints, gamesPlayed, tournamentScore };
                 })
