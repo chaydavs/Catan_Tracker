@@ -1974,13 +1974,16 @@
 
             const playerStats = players
                 .filter(p => p.gamesPlayed > 0)
-                .map(player => ({
-                    ...player,
-                    winRate: player.gamesPlayed > 0 ? (player.wins / player.gamesPlayed) * 100 : 0,
-                    avgPoints: player.gamesPlayed > 0 ? player.totalPoints / player.gamesPlayed : 0,
-                }))
+                .map(player => {
+                    const winRate = player.gamesPlayed > 0 ? (player.wins / player.gamesPlayed) * 100 : 0;
+                    const avgPoints = player.gamesPlayed > 0 ? player.totalPoints / player.gamesPlayed : 0;
+                    // Calculate tournament score using the same formula as leaderboard
+                    const tournamentScore = (0.25 * player.gamesPlayed) + (0.5 * avgPoints) + (7 * player.wins);
+                    return { ...player, winRate, avgPoints, tournamentScore };
+                })
                 .sort((a, b) => {
-                    if (b.totalPoints !== a.totalPoints) return b.totalPoints - a.totalPoints;
+                    // Sort by tournament score first
+                    if (b.tournamentScore !== a.tournamentScore) return b.tournamentScore - a.tournamentScore;
                     if (b.wins !== a.wins) return b.wins - a.wins;
                     return b.winRate - a.winRate;
                 });
@@ -2043,7 +2046,7 @@
                                                 </span>
                                                 <span className="text-lg font-bold text-wood-dark">{player.name}</span>
                                             </div>
-                                            <span className="text-2xl font-bold text-wheat">{player.winRate.toFixed(1)}%</span>
+                                            <span className="text-2xl font-bold text-wheat">{player.tournamentScore.toFixed(1)} pts</span>
                                         </div>
                                         <div className="grid grid-cols-2 md-grid-cols-4 gap-2 text-sm text-wood-medium">
                                             <div className="info-row">
@@ -2055,12 +2058,12 @@
                                                 <span className="font-semibold">{player.wins}</span>
                                             </div>
                                             <div className="info-row">
-                                                <span>Avg Pts:</span>
+                                                <span>Avg VPs:</span>
                                                 <span className="font-semibold">{player.avgPoints.toFixed(1)}</span>
                                             </div>
                                             <div className="info-row">
-                                                <span>Total Pts:</span>
-                                                <span className="font-semibold">{player.totalPoints}</span>
+                                                <span>Win Rate:</span>
+                                                <span className="font-semibold">{player.winRate.toFixed(1)}%</span>
                                             </div>
                                         </div>
                                     </div>
