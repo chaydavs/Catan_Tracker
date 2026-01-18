@@ -170,38 +170,39 @@ Players are ranked in the following order:
 
 ### Custom Tournament Scoring (This Tracker)
 
-This tracker implements a **skill-weighted scoring system** that rewards competitive achievement:
+This tracker implements a **balanced scoring system** that rewards participation, performance, and competitive achievement:
 
 **Scoring Formula:**
 ```
-Tournament Points = (0.25 × Games Played) + (0.5 × Average VPs per Game) + (3 × Wins)
+Tournament Points = (0.5 × Games Played) + (0.5 × Average VPs per Game) + (4 × Wins)
 ```
 
 **Point Breakdown:**
-- **0.25 points** per game played (minimal participation credit)
+- **0.5 points** per game played (meaningful participation credit)
 - **0.5 × average VPs per game** (rewards consistent performance)
-- **3 points** per game won (rewards competitive wins)
+- **4 points** per game won (heavily rewards competitive wins)
 
 **How It Works:**
-1. Each game played adds 0.25 points (reduced to de-emphasize mere attendance)
+1. Each game played adds 0.5 points (encourages participation)
 2. Your average victory points per game is multiplied by 0.5
-3. Each game you win adds 3 points
+3. Each game you win adds 4 points (winning is most valuable)
 4. Players are ranked by total tournament points (highest to lowest)
 
 **Example:**
-- Player A: 10 games, 5 wins, 95 VPs (9.5 avg) → Score: (0.25×10) + (0.5×9.5) + (3×5) = **24.25 points**
-- Player B: 8 games, 6 wins, 88 VPs (11 avg) → Score: (0.25×8) + (0.5×11) + (3×6) = **25.5 points**
-- Player C: 20 games, 2 wins, 140 VPs (7 avg) → Score: (0.25×20) + (0.5×7) + (3×2) = **14.5 points**
+- Player A: 10 games, 5 wins, 95 VPs (9.5 avg) → Score: (0.5×10) + (0.5×9.5) + (4×5) = **29.75 points**
+- Player B: 8 games, 6 wins, 88 VPs (11 avg) → Score: (0.5×8) + (0.5×11) + (4×6) = **33.50 points**
+- Player C: 20 games, 2 wins, 140 VPs (7 avg) → Score: (0.5×20) + (0.5×7) + (4×2) = **21.50 points**
 
 **Why This Formula:**
+- Balanced components: Games and Avg VPs have equal weight (1:1)
 - Winning is valued appropriately (must beat 3-5 opponents)
-- 1 win = 12 games of participation (prevents grinding)
-- 1 win = 6 avg VPs worth of performance
-- Ratio: 1 : 2 : 12 (games : avg VPs : wins)
-- Rewards skill and competitive success over mere participation
-- Balanced for competitive tournaments
+- 1 win = 8 games of participation (prevents grinding but rewards dedication)
+- 1 win = 8 avg VPs worth of performance
+- Ratio: 1 : 1 : 8 (games : avg VPs : wins)
+- Rewards skill, performance, and participation
+- Ideal for tournaments that value both competition and engagement
 
-This system rewards winning (3 pts per win) as an important achievement, while giving appropriate credit for performance quality and minimal credit for participation.
+This system rewards winning (4 pts per win) as the most important achievement, while giving equal credit to participation and performance quality.
 
 ---
 

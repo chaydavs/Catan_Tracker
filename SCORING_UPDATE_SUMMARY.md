@@ -4,20 +4,20 @@
 
 ## Changes Implemented
 
-### 1. Skill-Weighted Tournament Scoring System ✅
+### 1. Balanced Tournament Scoring System ✅
 
 **Previous System:**
 - Players ranked solely by total victory points accumulated
 
-**New System (Skill-Weighted Formula):**
+**New System (Improved Balanced Formula):**
 ```
-Tournament Points = (0.25 × Games Played) + (0.5 × Avg VPs per Game) + (3 × Wins)
+Tournament Points = (0.5 × Games Played) + (0.5 × Avg VPs per Game) + (4 × Wins)
 ```
 
 **Point Values:**
-- **0.25 points** per game played (minimal participation credit)
+- **0.5 points** per game played (meaningful participation credit)
 - **0.5 × average VPs per game** (performance quality)
-- **3 points** per game won (competitive achievement bonus)
+- **4 points** per game won (competitive achievement bonus)
 
 **How It Works:**
 - Each player accumulates absolute points based on the formula
@@ -28,10 +28,11 @@ Tournament Points = (0.25 × Games Played) + (0.5 × Avg VPs per Game) + (3 × W
   - Games Played count
 
 **Benefits:**
-- Properly rewards competitive difficulty (winning is 5-6x harder than playing)
-- Reduces "grind" advantage - can't win by just playing many games
-- Emphasizes skill and performance over mere attendance
-- Better suited for competitive tournaments
+- Balanced components: Games and Avg VPs equally weighted (1:1 ratio)
+- Meaningful participation rewards (0.5 per game encourages engagement)
+- Properly rewards competitive difficulty (4 pts per win)
+- Prevents grinding while rewarding dedication
+- Ideal for tournaments valuing both competition and participation
 - Still gives credit for consistent performance (avg VPs)
 - Simple, transparent, and easy to calculate manually
 
